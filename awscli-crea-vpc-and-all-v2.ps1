@@ -20,12 +20,10 @@ $vpcId = (aws ec2 create-vpc `
     --query 'Vpc.VpcId' --output text)
 # Habilitar la resolución de DNS
 Write-Host "==11: modifica VPC: Habilita DNS"
-#aws ec2 modify-vpc-attribute --vpc-id $vpcId --enable-dns-support "{\"Value\":true}"
 aws ec2 modify-vpc-attribute --vpc-id $vpcId --enable-dns-support --region $region
 
 # Habilitar nombres de host DNS
 Write-Host "==12: modifica VPC: Habilita DNS-host"
-#aws ec2 modify-vpc-attribute --vpc-id $vpcId --enable-dns-hostnames "{\"Value\":true}"
 aws ec2 modify-vpc-attribute --vpc-id $vpcId --enable-dns-hostnames --region $region
 
 # Crear la subred pública
@@ -74,14 +72,14 @@ aws ec2 associate-route-table --subnet-id $publicSubnetId --route-table-id $publ
 aws ec2 modify-subnet-attribute --subnet-id $publicSubnetId --map-public-ip-on-launch --region $region
 
 # Crear una gateway NAT
-Write-Host "==77: crea GatewayNAT"
+Write-Host "==70: crea GatewayNAT"
 $natGatewayId = (aws ec2 create-nat-gateway --subnet-id $publicSubnetId --allocation-id $(aws ec2 allocate-address --query 'AllocationId' --output text --region $region) --region $region --query 'NatGateway.NatGatewayId' --output text)
 
 # Esperar a que la gateway NAT esté disponible
 aws ec2 wait nat-gateway-available --nat-gateway-ids $natGatewayId --region $region
 
 # Crear una tabla de rutas para la subred privada
-Write-Host "==88: crea tabla-rutas privada"
+Write-Host "==80: crea tabla-rutas privada"
 $privateRouteTableId = (aws ec2 create-route-table --vpc-id $vpcId --region $region --query 'RouteTable.RouteTableId' --output text)
 
 # Crear una ruta en la tabla de rutas privada que apunte a la gateway NAT

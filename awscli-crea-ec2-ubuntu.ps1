@@ -1,7 +1,7 @@
 #=================
 # Paco Cuadrado fcuadradoa01@educantabria.es
-# v1.0 - 2025-03-18
-# Descripción: Crea una instancia EC2 basada en Ubuntu en el VPC y subred dadas como parametros
+# v1.0 - 2025-04-15
+# Descripción: Crea una instancia EC2 basada en Ubuntu 24.0
 # Powershell version: 5.1
 #=================
 # paso de parametros:
@@ -11,7 +11,7 @@ param (
     [Parameter(Mandatory=$true)]
     [string]$VpcId,
     [Parameter(Mandatory=$true)]
-    [string]$SubnetId
+    [string]$SubredIdPublica
 )
 
 # Configurar la región
@@ -25,7 +25,7 @@ $Amiid = "ami-04b4f1a9cf54c11d0" # Ubuntu Server 24.04 x64
 Write-Host "==10: crea el grupo-de-seguridad"
 $securityGroupId = aws ec2 create-security-group `
     --group-name "$Nombre-sg" `
-    --description "Grupo de seguridad que abre los puertos 22 y 80" `
+    --description "Grupo de seguridad que abre el puerto 22" `
     --region $region `
     --vpc-id $vpcId `
     --query 'GroupId' `
@@ -41,25 +41,6 @@ aws ec2 authorize-security-group-ingress `
     --cidr 0.0.0.0/0 `
     --output text
 
-Write-Host "==12: abro el puerto 80"
-aws ec2 authorize-security-group-ingress `
-    --group-id $securityGroupId `
-    --region $region `
-    --protocol tcp `
-    --port 80 `
-    --cidr 0.0.0.0/0 `
-    --output text
-
-# configuro la preinstalación del EC2 con instalcion de Apache
-Write-Host "==20: Instalo apache"
-$userData = @"
-#!/bin/bash
-sudo apt update -y
-sudo apt install -y apache2
-"@
-
-# Convierte el script en Base64 Se convierte el script en Base64
-$userDataBase64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($userData))
 # Crea la instancia EC2
 Write-Host "==21: Lanzo la EC2"
 $instanceId = aws ec2 run-instances `
@@ -68,8 +49,7 @@ $instanceId = aws ec2 run-instances `
     --region $region `
     --key-name $keyName `
     --security-group-ids $securityGroupId `
-    --subnet-id $subnetId `
-    --user-data $userDataBase64 `
+    --subnet-id $SubredIdPublica `
     --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$Nombre}]" `
     --associate-public-ip-address `
     --count 1 `
@@ -77,6 +57,6 @@ $instanceId = aws ec2 run-instances `
     --output text
 
 # Muestra el ID de la instancia creada
-Write-Host "===== IaC: EC2 Ubunut + Apache2 ==========="
+Write-Host "===== IaC: EC2 Ubunutu 24.04 ==========="
 Write-Host "secury-group ID: $securityGroupId"
 Write-Output "Instancia EC2 ID: $instanceId"
